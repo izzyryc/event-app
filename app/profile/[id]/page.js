@@ -3,16 +3,19 @@ import { useEffect, useState } from 'react';
 import { doc, getDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { db } from '../../../lib/firebase';
 import { useParams, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import useAuth from '../../../lib/useAuth';
 
 export default function ProfilePage() {
   const { id } = useParams();
   const searchParams = useSearchParams();
   const type = searchParams.get('type');
+  const router = useRouter();
   const [profile, setProfile] = useState(null);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const { user: currentUser } = useAuth();
+  const [isOwnProfile, setIsOwnProfile] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -22,6 +25,18 @@ export default function ProfilePage() {
     };
     fetchProfile();
   }, [id, type]);
+
+  useEffect(() => {
+    if (!currentUser) return;
+    // Check if this is the current user's own profile
+    const leaderFlag = currentUser.email.includes('@eventapp.com');
+    if (leaderFlag) {
+      const leaderId = currentUser.email.replace('@eventapp.com', '');
+      setIsOwnProfile(leaderId === id);
+    } else {
+      setIsOwnProfile(currentUser.uid === id);
+    }
+  }, [currentUser, id]);
 
   useEffect(() => {
     const checkSaved = async () => {
@@ -121,7 +136,20 @@ export default function ProfilePage() {
 
         {/* Action buttons */}
         <div className="flex flex-col gap-3 mt-2">
-          {currentUser && (
+
+          {/* Edit button — only on own profile */}
+          {isOwnProfile && (
+            <button
+              onClick={() => router.push('/edit-profile')}
+              className="w-full rounded-2xl py-3 text-sm font-semibold transition-all"
+              style={{ backgroundColor: '#36363E', color: 'white' }}
+            >
+              Edit my profile
+            </button>
+          )}
+
+          {/* Save button — only on other people's profiles */}
+          {currentUser && !isOwnProfile && (
             <button
               onClick={handleSave}
               disabled={saving}
@@ -135,6 +163,7 @@ export default function ProfilePage() {
               {saving ? 'Saving...' : saved ? 'Saved — tap to remove' : 'Save profile'}
             </button>
           )}
+
           {profile.linkedin && (
             <a
               href={profile.linkedin}

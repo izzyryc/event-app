@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { collection, getDocs, updateDoc, doc } from 'firebase/firestore';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { db, auth } from '../../lib/firebase';
@@ -37,6 +37,7 @@ export default function LeaderLogin() {
   const router = useRouter();
   const [step, setStep] = useState('search');
   const [search, setSearch] = useState('');
+  const [allLeaders, setAllLeaders] = useState([]);
   const [results, setResults] = useState([]);
   const [selected, setSelected] = useState(null);
   const [pin, setPin] = useState('');
@@ -47,21 +48,34 @@ export default function LeaderLogin() {
   const [email, setEmail] = useState('');
   const [bio, setBio] = useState('');
   const [expertise, setExpertise] = useState([]);
- 
-  const handleSearch = async () => {
-    if (!search.trim()) return;
-    try {
-      const snapshot = await getDocs(collection(db, 'leaders'));
-      const filtered = snapshot.docs
-        .map(d => ({ id: d.id, ...d.data() }))
-        .filter(d => d.name && d.name.toLowerCase().includes(search.toLowerCase()));
-      setResults(filtered);
-    } catch (err) {
-      console.log('error:', err.message);
+
+  // Fetch all leaders once on mount
+  useEffect(() => {
+    async function fetchAllLeaders() {
+      try {
+        const snapshot = await getDocs(collection(db, 'leaders'));
+        const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        setAllLeaders(data);
+      } catch (err) {
+        console.log('error:', err.message);
+      }
     }
-  };
+    fetchAllLeaders();
+  }, []);
+
+  // Filter as user types
+  useEffect(() => {
+    if (!search.trim()) {
+      setResults([]);
+      return;
+    }
+    const filtered = allLeaders.filter(d =>
+      d.name && d.name.toLowerCase().includes(search.toLowerCase())
+    );
+    setResults(filtered);
+  }, [search, allLeaders]);
  
-  const handleClaim = async () => {
+const handleClaim = async () => {
     setLoading(true);
     setError('');
     if (pin !== selected.pin) {
@@ -71,18 +85,22 @@ export default function LeaderLogin() {
     }
     try {
       await signInWithEmailAndPassword(auth, selected.id.replace(/\s+/g, '') + '@eventapp.com', pin);
-      setStep('complete');
-      setLoading(false);
     } catch {
       try {
         await createUserWithEmailAndPassword(auth, selected.id.replace(/\s+/g, '') + '@eventapp.com', pin);
-        setStep('complete');
-        setLoading(false);
       } catch (err) {
         setError(err.message);
         setLoading(false);
+        return;
       }
     }
+    // If profile already complete, go straight to home
+    if (selected.profileComplete) {
+      router.push('/');
+    } else {
+      setStep('complete');
+    }
+    setLoading(false);
   };
  
   const toggleExpertise = (item) => {
@@ -125,33 +143,23 @@ export default function LeaderLogin() {
           Industry Leader Sign In
         </h1>
         <p className="text-sm mb-8" style={{ color: '#36363E', opacity: 0.6 }}>
-          Search your name to find your pre-made profile
+          Start typing your name to find your profile
         </p>
  
-        <div className="flex gap-2 mb-4">
-          <input
-            placeholder="Search your name..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleSearch()}
-            style={{ ...inputStyle, borderRadius: '16px' }}
-          />
-          <button
-            onClick={handleSearch}
-            className="px-5 rounded-2xl text-white font-semibold text-sm shrink-0"
-            style={{ backgroundColor: '#F4324C' }}
-          >
-            Search
-          </button>
-        </div>
+        <input
+          placeholder="Search your name..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          style={{ ...inputStyle, marginBottom: '16px' }}
+        />
  
-        {results.length === 0 && search.length > 0 && (
+        {search.length > 0 && results.length === 0 && (
           <p className="text-sm" style={{ color: '#36363E', opacity: 0.5 }}>
             No results found. Try a different spelling or speak to an organiser.
           </p>
         )}
  
-        <div className="space-y-3 mt-2">
+        <div className="space-y-3">
           {results.map(r => (
             <button
               key={r.id}
