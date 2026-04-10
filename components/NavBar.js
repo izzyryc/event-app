@@ -10,7 +10,7 @@ export default function NavBar() {
 
   if (!user) return null;
 
-  const hideOn = ['/signup', '/leader-login', '/welcome', '/admin/login', '/admin', '/edit-profile'];
+  const hideOn = ['/signup', '/login', '/leader-login', '/welcome', '/admin/login', '/admin', '/edit-profile'];
   if (hideOn.includes(pathname)) return null;
 
   const handleProfileNav = () => {
