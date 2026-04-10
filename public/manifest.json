@@ -1,0 +1,17 @@
+{
+  "name": "Generation Prevention: Parliamentary Summit",
+  "short_name": "Gen Prevention",
+  "description": "Lady Garden Foundation's 2026 Student Networking Event",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FEE2DF",
+  "theme_color": "#F4324C",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

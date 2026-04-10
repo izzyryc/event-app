@@ -10,7 +10,7 @@ export default function NavBar() {
 
   if (!user) return null;
 
-  const hideOn = ['/signup', '/leader-login'];
+  const hideOn = ['/signup', '/leader-login', '/welcome'];
   if (hideOn.includes(pathname)) return null;
 
   const tabs = [
