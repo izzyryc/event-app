@@ -14,6 +14,7 @@ export default function SignUp() {
   const [interests, setInterests] = useState('');
   const [linkedin, setLinkedin] = useState('');
   const [photoURL, setPhotoURL] = useState('');
+  const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -42,6 +43,7 @@ export default function SignUp() {
         interests,
         linkedin,
         photoURL,
+        marketingOptIn,
         type: 'student',
         createdAt: new Date(),
       });
@@ -56,7 +58,6 @@ export default function SignUp() {
     <main className="min-h-screen pb-10 px-6 pt-12" style={{ backgroundColor: '#FEE2DF' }}>
       <div className="max-w-md mx-auto">
 
-        {/* Back button */}
         <button
           onClick={() => router.push('/welcome')}
           className="text-sm mb-6 flex items-center gap-1"
@@ -65,7 +66,6 @@ export default function SignUp() {
           ← Back
         </button>
 
-        {/* Header */}
         <h1
           className="text-5xl leading-none mb-2"
           style={{ color: '#36363E', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900 }}
@@ -96,6 +96,39 @@ export default function SignUp() {
           />
           <input placeholder="LinkedIn URL" value={linkedin} onChange={e => setLinkedin(e.target.value)} style={inputStyle} />
           <input placeholder="Photo URL (optional)" value={photoURL} onChange={e => setPhotoURL(e.target.value)} style={inputStyle} />
+
+          {/* Marketing opt-in */}
+          <button
+            type="button"
+            onClick={() => setMarketingOptIn(!marketingOptIn)}
+            className="flex items-start gap-3 text-left mt-2 p-4 rounded-2xl transition-all"
+            style={{
+              backgroundColor: marketingOptIn ? '#FEE2DF' : 'white',
+              border: `1px solid ${marketingOptIn ? '#F4324C' : '#e5e7eb'}`,
+            }}
+          >
+            <div
+              className="w-5 h-5 rounded-md shrink-0 mt-0.5 flex items-center justify-center"
+              style={{
+                backgroundColor: marketingOptIn ? '#F4324C' : 'white',
+                border: `2px solid ${marketingOptIn ? '#F4324C' : '#e5e7eb'}`,
+              }}
+            >
+              {marketingOptIn && (
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path d="M2 6L5 9L10 3" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              )}
+            </div>
+            <div>
+              <p className="text-sm font-semibold" style={{ color: '#36363E' }}>
+                Sign me up for the Lady Garden Foundation newsletter
+              </p>
+              <p className="text-xs mt-0.5" style={{ color: '#36363E', opacity: 0.6 }}>
+                Stay up to date with our latest news, events and campaigns. You can unsubscribe at any time.
+              </p>
+            </div>
+          </button>
 
           <button
             type="submit"

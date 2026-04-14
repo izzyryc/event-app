@@ -32,6 +32,40 @@ const inputStyle = {
   color: '#36363E',
   outline: 'none',
 };
+
+const MarketingCheckbox = ({ value, onChange }) => (
+  <button
+    type="button"
+    onClick={() => onChange(!value)}
+    className="flex items-start gap-3 text-left p-4 rounded-2xl transition-all"
+    style={{
+      backgroundColor: value ? '#FEE2DF' : 'white',
+      border: `1px solid ${value ? '#F4324C' : '#e5e7eb'}`,
+    }}
+  >
+    <div
+      className="w-5 h-5 rounded-md shrink-0 mt-0.5 flex items-center justify-center"
+      style={{
+        backgroundColor: value ? '#F4324C' : 'white',
+        border: `2px solid ${value ? '#F4324C' : '#e5e7eb'}`,
+      }}
+    >
+      {value && (
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M2 6L5 9L10 3" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      )}
+    </div>
+    <div>
+      <p className="text-sm font-semibold" style={{ color: '#36363E' }}>
+        Sign me up for the Lady Garden Foundation newsletter
+      </p>
+      <p className="text-xs mt-0.5" style={{ color: '#36363E', opacity: 0.6 }}>
+        Stay up to date with our latest news, events and campaigns. You can unsubscribe at any time.
+      </p>
+    </div>
+  </button>
+);
  
 export default function LeaderLogin() {
   const router = useRouter();
@@ -48,8 +82,8 @@ export default function LeaderLogin() {
   const [email, setEmail] = useState('');
   const [bio, setBio] = useState('');
   const [expertise, setExpertise] = useState([]);
+  const [marketingOptIn, setMarketingOptIn] = useState(false);
 
-  // Fetch all leaders once on mount
   useEffect(() => {
     async function fetchAllLeaders() {
       try {
@@ -63,7 +97,6 @@ export default function LeaderLogin() {
     fetchAllLeaders();
   }, []);
 
-  // Filter as user types
   useEffect(() => {
     if (!search.trim()) {
       setResults([]);
@@ -75,7 +108,7 @@ export default function LeaderLogin() {
     setResults(filtered);
   }, [search, allLeaders]);
  
-const handleClaim = async () => {
+  const handleClaim = async () => {
     setLoading(true);
     setError('');
     if (pin !== selected.pin) {
@@ -94,7 +127,6 @@ const handleClaim = async () => {
         return;
       }
     }
-    // If profile already complete, go straight to home
     if (selected.profileComplete) {
       router.push('/');
     } else {
@@ -117,6 +149,7 @@ const handleClaim = async () => {
         email,
         bio,
         expertise,
+        marketingOptIn,
         profileComplete: true,
       });
       router.push('/');
@@ -289,6 +322,8 @@ const handleClaim = async () => {
               ))}
             </div>
           </div>
+
+          <MarketingCheckbox value={marketingOptIn} onChange={setMarketingOptIn} />
  
           {error && (
             <div className="rounded-2xl px-4 py-3 text-sm" style={{ backgroundColor: '#F4324C', color: 'white' }}>

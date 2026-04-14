@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { db } from '../../lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import useAuth from '../../lib/useAuth';
 
@@ -10,11 +10,15 @@ export default function ConnectionsPage() {
   const { user: currentUser, loading } = useAuth();
   const [savedProfiles, setSavedProfiles] = useState([]);
   const [fetching, setFetching] = useState(true);
+  const [notes, setNotes] = useState({});
+  const [editingNote, setEditingNote] = useState(null);
+  const [noteText, setNoteText] = useState('');
+  const [savingNote, setSavingNote] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
     if (!loading && !currentUser) {
-      router.push('/signup');
+      router.push('/welcome');
     }
   }, [currentUser, loading]);
 
@@ -22,7 +26,6 @@ export default function ConnectionsPage() {
     const fetchConnections = async () => {
       if (!currentUser) return;
 
-      // Get current user's document to find their saved connection IDs
       const isLeader = currentUser.email.includes('@eventapp.com');
       const col = isLeader ? 'leaders' : 'profiles';
       const docId = isLeader
@@ -32,10 +35,13 @@ export default function ConnectionsPage() {
       const userSnap = await getDoc(doc(db, col, docId));
       if (!userSnap.exists()) { setFetching(false); return; }
 
-      const connectionIds = userSnap.data().connections || [];
+      const userData = userSnap.data();
+      const connectionIds = userData.connections || [];
+      const savedNotes = userData.notes || {};
+      setNotes(savedNotes);
+
       if (connectionIds.length === 0) { setFetching(false); return; }
 
-      // Fetch each saved profile — try students first, then leaders
       const profiles = await Promise.all(
         connectionIds.map(async (pid) => {
           const studentSnap = await getDoc(doc(db, 'profiles', pid));
@@ -57,6 +63,27 @@ export default function ConnectionsPage() {
     fetchConnections();
   }, [currentUser]);
 
+  const handleSaveNote = async (personId) => {
+    setSavingNote(true);
+    const isLeader = currentUser.email.includes('@eventapp.com');
+    const col = isLeader ? 'leaders' : 'profiles';
+    const docId = isLeader
+      ? currentUser.email.replace('@eventapp.com', '')
+      : currentUser.uid;
+
+    const updatedNotes = { ...notes, [personId]: noteText };
+    await updateDoc(doc(db, col, docId), { notes: updatedNotes });
+    setNotes(updatedNotes);
+    setEditingNote(null);
+    setNoteText('');
+    setSavingNote(false);
+  };
+
+  const handleEditNote = (personId) => {
+    setEditingNote(personId);
+    setNoteText(notes[personId] || '');
+  };
+
   if (loading || fetching) {
     return (
       <main className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#FEE2DF' }}>
@@ -69,7 +96,12 @@ export default function ConnectionsPage() {
     <main className="min-h-screen pb-24 px-6 pt-10" style={{ backgroundColor: '#FEE2DF' }}>
       <div className="max-w-md mx-auto">
 
-        <h1 className="text-3xl font-bold mb-2" style={{ color: '#36363E' }}>Saved Profiles</h1>
+        <h1
+          className="text-5xl leading-none mb-2"
+          style={{ color: '#36363E', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900 }}
+        >
+          Saved Profiles
+        </h1>
         <p className="text-sm mb-8" style={{ color: '#36363E', opacity: 0.6 }}>
           People you've saved to connect with later.
         </p>
@@ -90,43 +122,96 @@ export default function ConnectionsPage() {
             </button>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {savedProfiles.map((person) => (
-              <button
-                key={person.id}
-                onClick={() => router.push(`/profile/${person.id}?type=${person.type}`)}
-                className="w-full bg-white rounded-3xl px-5 py-4 shadow-sm flex items-center gap-4 text-left hover:shadow-md transition-all active:scale-95"
-              >
-                {/* Avatar */}
-                {person.photoURL ? (
-                  <img src={person.photoURL} alt={person.name} className="w-14 h-14 rounded-full object-cover shrink-0" />
-                ) : (
-                  <div
-                    className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold text-white shrink-0"
-                    style={{ backgroundColor: '#F4324C' }}
-                  >
-                    {person.name.charAt(0)}
+              <div key={person.id} className="bg-white rounded-3xl px-5 py-4 shadow-sm">
+
+                {/* Profile row */}
+                <button
+                  onClick={() => router.push(`/profile/${person.id}?type=${person.type}`)}
+                  className="w-full flex items-center gap-4 text-left"
+                >
+                  {person.photoURL ? (
+                    <img src={person.photoURL} alt={person.name} className="w-14 h-14 rounded-full object-cover shrink-0" />
+                  ) : (
+                    <div
+                      className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold text-white shrink-0"
+                      style={{ backgroundColor: '#F4324C' }}
+                    >
+                      {person.name.charAt(0)}
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold truncate" style={{ color: '#36363E' }}>{person.name}</p>
+                    {person.company && (
+                      <p className="text-sm truncate" style={{ color: '#36363E', opacity: 0.6 }}>{person.company}</p>
+                    )}
+                    {person.university && (
+                      <p className="text-sm truncate" style={{ color: '#36363E', opacity: 0.6 }}>{person.university}</p>
+                    )}
+                    {person.type === 'leader' && (
+                      <span className="text-xs text-white px-2 py-0.5 rounded-full inline-block mt-1" style={{ backgroundColor: '#36363E' }}>
+                        Industry leader
+                      </span>
+                    )}
+                  </div>
+                  <span style={{ color: '#F4324C' }}>→</span>
+                </button>
+
+                {/* Existing note */}
+                {notes[person.id] && editingNote !== person.id && (
+                  <div className="mt-3 rounded-2xl px-4 py-3" style={{ backgroundColor: '#FEE2DF' }}>
+                    <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: '#F4324C' }}>My note</p>
+                    <p className="text-sm" style={{ color: '#36363E' }}>{notes[person.id]}</p>
                   </div>
                 )}
 
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold truncate" style={{ color: '#36363E' }}>{person.name}</p>
-                  {person.company && (
-                    <p className="text-sm truncate" style={{ color: '#36363E', opacity: 0.6 }}>{person.company}</p>
-                  )}
-                  {person.university && (
-                    <p className="text-sm truncate" style={{ color: '#36363E', opacity: 0.6 }}>{person.university}</p>
-                  )}
-                  {person.type === 'leader' && (
-                    <span className="text-xs text-white px-2 py-0.5 rounded-full inline-block mt-1" style={{ backgroundColor: '#36363E' }}>
-                      Industry leader
-                    </span>
-                  )}
-                </div>
+                {/* Note editing */}
+                {editingNote === person.id ? (
+                  <div className="mt-3">
+                    <textarea
+                      value={noteText}
+                      onChange={e => setNoteText(e.target.value)}
+                      placeholder="Add a private note about this person..."
+                      rows={3}
+                      className="w-full rounded-2xl px-4 py-3 text-sm"
+                      style={{
+                        border: '1px solid #e5e7eb',
+                        backgroundColor: 'white',
+                        color: '#36363E',
+                        outline: 'none',
+                        resize: 'none',
+                      }}
+                    />
+                    <div className="flex gap-2 mt-2">
+                      <button
+                        onClick={() => handleSaveNote(person.id)}
+                        disabled={savingNote}
+                        className="flex-1 rounded-xl py-2 text-sm font-semibold text-white"
+                        style={{ backgroundColor: '#F4324C' }}
+                      >
+                        {savingNote ? 'Saving...' : 'Save note'}
+                      </button>
+                      <button
+                        onClick={() => { setEditingNote(null); setNoteText(''); }}
+                        className="px-4 rounded-xl text-sm font-semibold"
+                        style={{ backgroundColor: '#e5e7eb', color: '#36363E' }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => handleEditNote(person.id)}
+                    className="mt-3 text-xs font-semibold"
+                    style={{ color: '#F4324C' }}
+                  >
+                    {notes[person.id] ? '✏️ Edit note' : '+ Add note'}
+                  </button>
+                )}
 
-                <span style={{ color: '#F4324C' }}>→</span>
-              </button>
+              </div>
             ))}
           </div>
         )}

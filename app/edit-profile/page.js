@@ -48,6 +48,7 @@ export default function EditProfilePage() {
   const [interests, setInterests] = useState('');
   const [linkedin, setLinkedin] = useState('');
   const [photoURL, setPhotoURL] = useState('');
+  const [marketingOptIn, setMarketingOptIn] = useState(false);
 
   const [bio, setBio] = useState('');
   const [leaderLinkedin, setLeaderLinkedin] = useState('');
@@ -74,6 +75,7 @@ export default function EditProfilePage() {
           setLeaderLinkedin(data.linkedin || '');
           setEmail(data.email || '');
           setExpertise(data.expertise || []);
+          setMarketingOptIn(data.marketingOptIn || false);
         }
       } else {
         const snap = await getDoc(doc(db, 'profiles', user.uid));
@@ -85,6 +87,7 @@ export default function EditProfilePage() {
           setInterests(data.interests || '');
           setLinkedin(data.linkedin || '');
           setPhotoURL(data.photoURL || '');
+          setMarketingOptIn(data.marketingOptIn || false);
         }
       }
     }
@@ -108,6 +111,7 @@ export default function EditProfilePage() {
           linkedin: leaderLinkedin,
           email,
           expertise,
+          marketingOptIn,
         });
       } else {
         await updateDoc(doc(db, 'profiles', user.uid), {
@@ -116,6 +120,7 @@ export default function EditProfilePage() {
           interests,
           linkedin,
           photoURL,
+          marketingOptIn,
         });
       }
       setSavedMsg(true);
@@ -240,6 +245,39 @@ export default function EditProfilePage() {
               </div>
             </>
           )}
+
+          {/* Marketing opt-in — shown for both students and leaders */}
+          <button
+            type="button"
+            onClick={() => setMarketingOptIn(!marketingOptIn)}
+            className="flex items-start gap-3 text-left p-4 rounded-2xl transition-all"
+            style={{
+              backgroundColor: marketingOptIn ? '#FEE2DF' : 'white',
+              border: `1px solid ${marketingOptIn ? '#F4324C' : '#e5e7eb'}`,
+            }}
+          >
+            <div
+              className="w-5 h-5 rounded-md shrink-0 mt-0.5 flex items-center justify-center"
+              style={{
+                backgroundColor: marketingOptIn ? '#F4324C' : 'white',
+                border: `2px solid ${marketingOptIn ? '#F4324C' : '#e5e7eb'}`,
+              }}
+            >
+              {marketingOptIn && (
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path d="M2 6L5 9L10 3" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              )}
+            </div>
+            <div>
+              <p className="text-sm font-semibold" style={{ color: '#36363E' }}>
+                Sign me up for the Lady Garden Foundation newsletter
+              </p>
+              <p className="text-xs mt-0.5" style={{ color: '#36363E', opacity: 0.6 }}>
+                Stay up to date with our latest news, events and campaigns. You can unsubscribe at any time.
+              </p>
+            </div>
+          </button>
 
           <button
             onClick={handleSave}
