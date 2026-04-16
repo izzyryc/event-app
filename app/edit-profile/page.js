@@ -8,19 +8,29 @@ import useAuth from '../../lib/useAuth';
 
 const EXPERTISE_OPTIONS = [
   'Venture Capital & Funding',
-  'Womens Health',
+  "Women's Health",
   'Charity & Non-Profit',
-  'Education & Academia',
-  'Tech & Innovation',
+  'Education',
+  'Tech',
   'Sustainability & Climate',
   'Arts & Culture',
-  'Policy & Advocacy',
+  'Policy',
   'Finance',
   'Entrepreneurship & Startups',
   'Healthcare & Medicine',
   'Academic Research',
   'Science & Engineering',
-  'Fashion & Beauty',
+  'Fashion',
+  'Beauty',
+  'Communications & Public Relations',
+  'Digital & Creative',
+  'Retail',
+  'Beauty',
+  'Hospitality',
+  'Finance',
+  'Human Resources',
+  'Legal',
+  'Teaching'
 ];
 
 const inputStyle = {
