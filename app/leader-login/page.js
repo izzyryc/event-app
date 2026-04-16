@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
  
 const EXPERTISE_OPTIONS = [
   'Venture Capital & Funding',
-  'Womens Health',
+  "Women's Health",
   'Charity & Non-Profit',
   'Education',
   'Tech',
@@ -27,7 +27,7 @@ const EXPERTISE_OPTIONS = [
   'Beauty',
   'Hospitality',
   'Finance',
-  'HR',
+  'Human Resources',
   'Legal',
   'Teaching'
 ];

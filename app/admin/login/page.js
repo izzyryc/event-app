@@ -5,7 +5,7 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../../lib/firebase';
 import { useRouter } from 'next/navigation';
 
-const ADMIN_EMAIL = 'admin@generationprevention.com';
+const ADMIN_EMAIL = 'isabelle@ladygardenfoundation.com';
 
 export default function AdminLogin() {
   const router = useRouter();

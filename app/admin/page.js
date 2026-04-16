@@ -9,7 +9,7 @@ import {
 import { signOut } from 'firebase/auth';
 import useAuth from '../../lib/useAuth';
 
-const ADMIN_EMAIL = 'admin@generationprevention.com';
+const ADMIN_EMAIL = 'isabelle@ladygardenfoundation.com';
 
 const inputStyle = {
   border: '1px solid #e5e7eb',
