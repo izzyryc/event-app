@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '../../lib/firebase';
 import { useRouter } from 'next/navigation';
 import useAuth from '../../lib/useAuth';
 
@@ -25,12 +26,10 @@ const EXPERTISE_OPTIONS = [
   'Communications & Public Relations',
   'Digital & Creative',
   'Retail',
-  'Beauty',
   'Hospitality',
-  'Finance',
   'Human Resources',
   'Legal',
-  'Teaching'
+  'Teaching',
 ];
 
 const inputStyle = {
@@ -58,6 +57,8 @@ export default function EditProfilePage() {
   const [interests, setInterests] = useState('');
   const [linkedin, setLinkedin] = useState('');
   const [photoURL, setPhotoURL] = useState('');
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
   const [marketingOptIn, setMarketingOptIn] = useState(false);
 
   const [bio, setBio] = useState('');
@@ -86,6 +87,8 @@ export default function EditProfilePage() {
           setEmail(data.email || '');
           setExpertise(data.expertise || []);
           setMarketingOptIn(data.marketingOptIn || false);
+          setPhotoURL(data.photoURL || '');
+          setPhotoPreview(data.photoURL || null);
         }
       } else {
         const snap = await getDoc(doc(db, 'profiles', user.uid));
@@ -97,12 +100,20 @@ export default function EditProfilePage() {
           setInterests(data.interests || '');
           setLinkedin(data.linkedin || '');
           setPhotoURL(data.photoURL || '');
+          setPhotoPreview(data.photoURL || null);
           setMarketingOptIn(data.marketingOptIn || false);
         }
       }
     }
     fetchProfile();
   }, [user, loading]);
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+  };
 
   const toggleExpertise = (item) => {
     setExpertise(prev =>
@@ -114,6 +125,19 @@ export default function EditProfilePage() {
     setSaving(true);
     setError('');
     try {
+      let finalPhotoURL = photoURL;
+
+      // Upload new photo if one was selected
+      if (photoFile) {
+        const isLeaderUser = user.email.includes('@eventapp.com');
+        const photoPath = isLeaderUser
+          ? `leaders/${user.email.replace('@eventapp.com', '')}`
+          : `profiles/${user.uid}`;
+        const storageRef = ref(storage, photoPath);
+        await uploadBytes(storageRef, photoFile);
+        finalPhotoURL = await getDownloadURL(storageRef);
+      }
+
       if (isLeader) {
         const leaderId = user.email.replace('@eventapp.com', '');
         await updateDoc(doc(db, 'leaders', leaderId), {
@@ -122,6 +146,7 @@ export default function EditProfilePage() {
           email,
           expertise,
           marketingOptIn,
+          photoURL: finalPhotoURL,
         });
       } else {
         await updateDoc(doc(db, 'profiles', user.uid), {
@@ -129,7 +154,7 @@ export default function EditProfilePage() {
           university,
           interests,
           linkedin,
-          photoURL,
+          photoURL: finalPhotoURL,
           marketingOptIn,
         });
       }
@@ -194,6 +219,38 @@ export default function EditProfilePage() {
         )}
 
         <div className="flex flex-col gap-4">
+
+          {/* Photo upload — shown for everyone */}
+          <div>
+            <label className="text-xs font-semibold uppercase tracking-widest block mb-2" style={{ color: '#F4324C' }}>
+              Profile photo
+            </label>
+            <div className="flex items-center gap-4">
+              {photoPreview ? (
+                <img src={photoPreview} alt="Preview" className="w-16 h-16 rounded-full object-cover shrink-0" />
+              ) : (
+                <div
+                  className="w-16 h-16 rounded-full flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: '#e5e7eb' }}
+                >
+                  <span className="text-2xl">📷</span>
+                </div>
+              )}
+              <label
+                className="flex-1 text-center py-3 rounded-2xl text-sm font-semibold cursor-pointer transition-all"
+                style={{ backgroundColor: 'white', color: '#36363E', border: '1px solid #e5e7eb' }}
+              >
+                {photoPreview ? 'Change photo' : 'Upload photo'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoChange}
+                  className="hidden"
+                />
+              </label>
+            </div>
+          </div>
+
           {!isLeader && (
             <>
               <div>
@@ -211,10 +268,6 @@ export default function EditProfilePage() {
               <div>
                 <label className="text-xs font-semibold uppercase tracking-widest block mb-2" style={{ color: '#F4324C' }}>LinkedIn URL</label>
                 <input value={linkedin} onChange={e => setLinkedin(e.target.value)} placeholder="https://linkedin.com/in/yourname" style={inputStyle} />
-              </div>
-              <div>
-                <label className="text-xs font-semibold uppercase tracking-widest block mb-2" style={{ color: '#F4324C' }}>Photo URL</label>
-                <input value={photoURL} onChange={e => setPhotoURL(e.target.value)} placeholder="Paste a link to a photo of yourself" style={inputStyle} />
               </div>
             </>
           )}
@@ -256,7 +309,7 @@ export default function EditProfilePage() {
             </>
           )}
 
-          {/* Marketing opt-in — shown for both students and leaders */}
+          {/* Marketing opt-in */}
           <button
             type="button"
             onClick={() => setMarketingOptIn(!marketingOptIn)}

@@ -2,7 +2,8 @@
 import { useState } from 'react';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
-import { auth, db } from '../../lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { auth, db, storage } from '../../lib/firebase';
 import { useRouter } from 'next/navigation';
 
 export default function SignUp() {
@@ -13,7 +14,8 @@ export default function SignUp() {
   const [university, setUniversity] = useState('');
   const [interests, setInterests] = useState('');
   const [linkedin, setLinkedin] = useState('');
-  const [photoURL, setPhotoURL] = useState('');
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
   const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -29,6 +31,13 @@ export default function SignUp() {
     outline: 'none',
   };
 
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -36,6 +45,14 @@ export default function SignUp() {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
+
+      let photoURL = '';
+      if (photoFile) {
+        const storageRef = ref(storage, `profiles/${user.uid}`);
+        await uploadBytes(storageRef, photoFile);
+        photoURL = await getDownloadURL(storageRef);
+      }
+
       await setDoc(doc(db, 'profiles', user.uid), {
         name,
         email,
@@ -95,7 +112,37 @@ export default function SignUp() {
             style={{ ...inputStyle, resize: 'none' }}
           />
           <input placeholder="LinkedIn URL" value={linkedin} onChange={e => setLinkedin(e.target.value)} style={inputStyle} />
-          <input placeholder="Photo URL (optional)" value={photoURL} onChange={e => setPhotoURL(e.target.value)} style={inputStyle} />
+
+          {/* Photo upload */}
+          <div>
+            <label className="text-xs font-semibold uppercase tracking-widest block mb-2" style={{ color: '#F4324C' }}>
+              Profile photo (optional)
+            </label>
+            <div className="flex items-center gap-4">
+              {photoPreview ? (
+                <img src={photoPreview} alt="Preview" className="w-16 h-16 rounded-full object-cover shrink-0" />
+              ) : (
+                <div
+                  className="w-16 h-16 rounded-full flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: '#e5e7eb' }}
+                >
+                  <span className="text-2xl">📷</span>
+                </div>
+              )}
+              <label
+                className="flex-1 text-center py-3 rounded-2xl text-sm font-semibold cursor-pointer transition-all"
+                style={{ backgroundColor: 'white', color: '#36363E', border: '1px solid #e5e7eb' }}
+              >
+                {photoPreview ? 'Change photo' : 'Upload photo'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoChange}
+                  className="hidden"
+                />
+              </label>
+            </div>
+          </div>
 
           {/* Marketing opt-in */}
           <button
