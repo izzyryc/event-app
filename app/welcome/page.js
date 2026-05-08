@@ -85,7 +85,7 @@ export default function WelcomePage() {
                 className="text-2xl text-white mb-1"
                 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900 }}
               >
-                I'm an Industry Leader
+                I'm an Industry Leader / Donor / Sponsor
               </p>
               <p className="text-sm text-white opacity-80">Find your pre-made profile and claim it with your PIN</p>
             </Link>
