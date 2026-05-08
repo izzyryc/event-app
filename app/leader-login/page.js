@@ -184,7 +184,7 @@ export default function LeaderLogin() {
           className="text-5xl leading-none mb-2"
           style={{ color: '#36363E', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900 }}
         >
-          Industry Leader Sign In
+          Sign In
         </h1>
         <p className="text-sm mb-8" style={{ color: '#36363E', opacity: 0.6 }}>
           Start typing your name to find your profile

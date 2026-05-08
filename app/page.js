@@ -98,7 +98,7 @@ export default function HomePage() {
               <p className="text-white font-semibold text-sm mb-1">📲 Add to your home screen</p>
               {isIOS ? (
                 <p className="text-white text-xs opacity-80 leading-relaxed">
-                  Open this link in <strong>Safari</strong>, tap the <strong>Share button</strong> (the box with an arrow), scroll down and tap <strong>"Add to Home Screen"</strong>
+               Open this link in <strong>Safari</strong>, tap the <strong>three dots (...)</strong> in the bottom right corner, tap <strong>"Share"</strong>, then scroll down and tap <strong>"Add to Home Screen"</strong>
                 </p>
               ) : (
                 <p className="text-white text-xs opacity-80 leading-relaxed">
