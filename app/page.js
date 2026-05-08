@@ -12,7 +12,6 @@ export default function HomePage() {
   const [userName, setUserName] = useState('');
   const [showInstallBanner, setShowInstallBanner] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
@@ -49,28 +48,8 @@ export default function HomePage() {
     setIsIOS(ios);
     const dismissed = localStorage.getItem('installBannerDismissed');
     if (dismissed) return;
-    if (ios) {
-      setShowInstallBanner(true);
-    } else {
-      window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        setDeferredPrompt(e);
-        setShowInstallBanner(true);
-      });
-    }
+    setShowInstallBanner(true);
   }, []);
-
-  const handleInstall = async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        setShowInstallBanner(false);
-        setIsInstalled(true);
-      }
-      setDeferredPrompt(null);
-    }
-  };
 
   const dismissBanner = () => {
     setShowInstallBanner(false);
@@ -111,56 +90,99 @@ export default function HomePage() {
         </p>
       </div>
 
-            {/* Install banner */}
-            {showInstallBanner && !isInstalled && (
-              <div className="mx-6 mb-6 rounded-3xl px-5 py-4 shadow-sm" style={{ backgroundColor: '#36363E' }}>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1">
-                    <p className="text-white font-semibold text-sm mb-1">📲 Add to your home screen</p>
-                    {isIOS ? (
-                      <p className="text-white text-xs opacity-80 leading-relaxed">
-                        Tap the <strong>Share button</strong> then tap <strong>Add to Home Screen</strong>
-                      </p>
-                    ) : (
-                      <p className="text-white text-xs opacity-80 leading-relaxed">
-                        Install our app for quick access to your schedule and event info
-                      </p>
-                    )}
-                  </div>
-                  <button
-                    onClick={handleInstall}
-                    className="flex-shrink-0 px-4 py-2 bg-white rounded-full text-sm font-semibold"
-                    style={{ color: '#36363E' }}
-                  >
-                    Install
-                  </button>
-                  <button
-                    onClick={dismissBanner}
-                    className="flex-shrink-0 text-white text-xl leading-none"
-                  >
-                    ×
-                  </button>
-                </div>
-              </div>
-            )}
-      
-            {/* Content section */}
-            <div className="px-6 mb-8">
-              <p className="text-sm font-semibold mb-4" style={{ color: '#36363E' }}>
-                Welcome, {userName || 'Guest'}!
-              </p>
+      {/* Install banner — instructions only, no fake button */}
+      {showInstallBanner && !isInstalled && (
+        <div className="mx-6 mb-6 rounded-3xl px-5 py-4 shadow-sm" style={{ backgroundColor: '#36363E' }}>
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1">
+              <p className="text-white font-semibold text-sm mb-1">📲 Add to your home screen</p>
+              {isIOS ? (
+                <p className="text-white text-xs opacity-80 leading-relaxed">
+                  Tap the <strong>Share button</strong> (↑) in Safari, then tap <strong>"Add to Home Screen"</strong>
+                </p>
+              ) : (
+                <p className="text-white text-xs opacity-80 leading-relaxed">
+                  Tap the <strong>three-dot menu</strong> in Chrome, then tap <strong>"Add to Home Screen"</strong>
+                </p>
+              )}
             </div>
-      
-            {/* Sign out */}
-            <div className="px-6">
-              <button
-                onClick={handleSignOut}
-                className="w-full py-3 rounded-full font-semibold text-white"
-                style={{ backgroundColor: '#F4324C' }}
-              >
-                Sign Out
-              </button>
-            </div>
-          </main>
-        );
-      }
+            <button
+              onClick={dismissBanner}
+              className="text-white opacity-50 text-lg leading-none shrink-0"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Welcome card */}
+      <div className="mx-6 bg-white rounded-3xl px-6 py-5 mb-6 shadow-sm">
+        <p className="text-sm" style={{ color: '#36363E', opacity: 0.6 }}>Welcome back</p>
+        <p className="text-xl font-bold mt-1" style={{ color: '#36363E' }}>
+          {userName || 'Attendee'} 👋
+        </p>
+      </div>
+
+      {/* Quick links */}
+      <div className="px-6 space-y-4">
+        <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#36363E', opacity: 0.5 }}>
+          Quick links
+        </p>
+
+        <button
+          onClick={() => router.push('/schedule')}
+          className="w-full text-left bg-white rounded-3xl px-6 py-5 shadow-sm flex items-center justify-between"
+        >
+          <div>
+            <p className="font-bold text-base" style={{ color: '#36363E' }}>📅 Event Schedule</p>
+            <p className="text-sm mt-0.5" style={{ color: '#36363E', opacity: 0.6 }}>See what's happening and when</p>
+          </div>
+          <span style={{ color: '#F4324C' }}>→</span>
+        </button>
+
+        <button
+          onClick={() => router.push('/directory')}
+          className="w-full text-left bg-white rounded-3xl px-6 py-5 shadow-sm flex items-center justify-between"
+        >
+          <div>
+            <p className="font-bold text-base" style={{ color: '#36363E' }}>🔍 Attendee Directory</p>
+            <p className="text-sm mt-0.5" style={{ color: '#36363E', opacity: 0.6 }}>Find and connect with attendees</p>
+          </div>
+          <span style={{ color: '#F4324C' }}>→</span>
+        </button>
+
+        <button
+          onClick={() => router.push('/connections')}
+          className="w-full text-left bg-white rounded-3xl px-6 py-5 shadow-sm flex items-center justify-between"
+        >
+          <div>
+            <p className="font-bold text-base" style={{ color: '#36363E' }}>🤝 My Saved Profiles</p>
+            <p className="text-sm mt-0.5" style={{ color: '#36363E', opacity: 0.6 }}>View people you've saved</p>
+          </div>
+          <span style={{ color: '#F4324C' }}>→</span>
+        </button>
+      </div>
+
+      {/* Sign out */}
+      <div className="mx-6 mt-6">
+        <button
+          onClick={handleSignOut}
+          className="w-full text-sm text-center py-3 rounded-2xl"
+          style={{ backgroundColor: 'white', color: '#36363E', opacity: 0.5 }}
+        >
+          Sign out
+        </button>
+      </div>
+
+      {/* LGF footer note */}
+      <div className="mx-6 mt-4 rounded-3xl px-6 py-5" style={{ backgroundColor: '#F4324C' }}>
+        <p className="text-white font-bold text-base mb-1">Lady Garden Foundation</p>
+        <p className="text-white text-sm opacity-90">
+          Raising awareness and funds for gynaecological cancers. Thank you for being part of this event.
+        </p>
+      </div>
+
+    </main>
+  );
+}
