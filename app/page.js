@@ -90,7 +90,7 @@ export default function HomePage() {
         </p>
       </div>
 
-      {/* Install banner — instructions only, no fake button */}
+      {/* Install banner */}
       {showInstallBanner && !isInstalled && (
         <div className="mx-6 mb-6 rounded-3xl px-5 py-4 shadow-sm" style={{ backgroundColor: '#36363E' }}>
           <div className="flex items-start justify-between gap-3">
@@ -98,11 +98,11 @@ export default function HomePage() {
               <p className="text-white font-semibold text-sm mb-1">📲 Add to your home screen</p>
               {isIOS ? (
                 <p className="text-white text-xs opacity-80 leading-relaxed">
-                  Tap the <strong>Share button</strong> (↑) in Safari, then tap <strong>"Add to Home Screen"</strong>
+                  Open this link in <strong>Safari</strong>, tap the <strong>Share button</strong> (the box with an arrow), scroll down and tap <strong>"Add to Home Screen"</strong>
                 </p>
               ) : (
                 <p className="text-white text-xs opacity-80 leading-relaxed">
-                  Tap the <strong>three-dot menu</strong> in Chrome, then tap <strong>"Add to Home Screen"</strong>
+                  Tap the <strong>three dots menu</strong> in the top right of Chrome, then tap <strong>"Add to Home Screen"</strong> and tap <strong>"Add"</strong>
                 </p>
               )}
             </div>
