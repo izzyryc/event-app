@@ -237,6 +237,54 @@ export default function AdminPage() {
     await fetchLeaders();
   };
 
+  // ── PIN EXPORT ────────────────────────────────────────
+
+  const handlePrintPINs = () => {
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Leader PINs — Generation Prevention Summit</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 40px; color: #333; }
+            h1 { font-size: 24px; margin-bottom: 8px; }
+            p { font-size: 14px; color: #666; margin-bottom: 24px; }
+            table { width: 100%; border-collapse: collapse; font-size: 14px; }
+            th { background: #36363E; color: white; padding: 10px 14px; text-align: left; }
+            td { padding: 10px 14px; border-bottom: 1px solid #e5e7eb; }
+            tr:nth-child(even) td { background: #f9f9f9; }
+          </style>
+        </head>
+        <body>
+          <h1>Generation Prevention: Parliamentary Summit</h1>
+          <p>Industry Leader PINs — printed ${new Date().toLocaleDateString('en-GB')}</p>
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Name</th>
+                <th>Company</th>
+                <th>PIN</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${leaders.map((leader, i) => `
+                <tr>
+                  <td>${i + 1}</td>
+                  <td>${leader.name || '—'}</td>
+                  <td>${leader.company || '—'}</td>
+                  <td><strong>${leader.pin || '—'}</strong></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+  };
+
   const handleSignOut = async () => {
     await signOut(auth);
     router.push('/admin/login');
@@ -250,7 +298,7 @@ export default function AdminPage() {
 
   if (user.email !== ADMIN_EMAIL) return null;
 
-  const tabs = ['schedule', 'resources', 'leaders'];
+  const tabs = ['schedule', 'resources', 'leaders', 'pins'];
 
   return (
     <main className="min-h-screen pb-16 px-4 pt-10" style={{ backgroundColor: '#FEE2DF' }}>
@@ -269,7 +317,7 @@ export default function AdminPage() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-8">
+        <div className="flex gap-2 mb-8 flex-wrap">
           {tabs.map(tab => (
             <button
               key={tab}
@@ -280,7 +328,7 @@ export default function AdminPage() {
                 color: activeTab === tab ? 'white' : '#36363E',
               }}
             >
-              {tab}
+              {tab === 'pins' ? 'PIN Export' : tab}
             </button>
           ))}
         </div>
@@ -409,7 +457,6 @@ export default function AdminPage() {
                 style={inputStyle}
               />
 
-              {/* Session ID helper */}
               <div className="rounded-xl px-4 py-3 text-xs" style={{ backgroundColor: '#FEE2DF', color: '#36363E' }}>
                 <p className="font-semibold mb-1">Session IDs:</p>
                 {sessions.map(s => (
@@ -564,6 +611,47 @@ export default function AdminPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── PIN EXPORT TAB ── */}
+        {activeTab === 'pins' && (
+          <div>
+            <h2 style={sectionTitle} className="mb-2">PIN Export</h2>
+            <p className="text-sm mb-6" style={{ color: '#36363E', opacity: 0.6 }}>
+              Print this table for a hard copy of all leader PINs on event day.
+            </p>
+
+            <button
+              onClick={handlePrintPINs}
+              className="w-full rounded-2xl py-4 text-white font-semibold mb-6 transition-all active:scale-95"
+              style={{ backgroundColor: '#F4324C', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '18px' }}
+            >
+              🖨️ Print PIN Sheet
+            </button>
+
+            <div className="bg-white rounded-3xl shadow-sm overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr style={{ backgroundColor: '#36363E' }}>
+                    <th className="text-left px-4 py-3 text-white font-semibold">#</th>
+                    <th className="text-left px-4 py-3 text-white font-semibold">Name</th>
+                    <th className="text-left px-4 py-3 text-white font-semibold">Company</th>
+                    <th className="text-left px-4 py-3 text-white font-semibold">PIN</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {leaders.map((leader, i) => (
+                    <tr key={leader.id} style={{ backgroundColor: i % 2 === 0 ? 'white' : '#fafafa' }}>
+                      <td className="px-4 py-3" style={{ color: '#36363E', opacity: 0.4 }}>{i + 1}</td>
+                      <td className="px-4 py-3 font-medium" style={{ color: '#36363E' }}>{leader.name}</td>
+                      <td className="px-4 py-3" style={{ color: '#36363E', opacity: 0.7 }}>{leader.company}</td>
+                      <td className="px-4 py-3 font-bold" style={{ color: '#F4324C' }}>{leader.pin}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
