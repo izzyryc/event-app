@@ -49,9 +49,16 @@ export default function AdminPage() {
 
   // Leaders state
   const [leaders, setLeaders] = useState([]);
-  const [leaderForm, setLeaderForm] = useState({ id: '', name: '', company: '', pin: '', photoURL: '' });
+  const [leaderForm, setLeaderForm] = useState({ id: '', name: '', company: '', pin: '', photoURL: '', table: '' });
   const [editingLeader, setEditingLeader] = useState(null);
   const [leaderLoading, setLeaderLoading] = useState(false);
+
+  // Students state
+  const [students, setStudents] = useState([]);
+  const [studentSearch, setStudentSearch] = useState('');
+  const [editingStudent, setEditingStudent] = useState(null);
+  const [studentTables, setStudentTables] = useState({ table1: '', table2: '', table3: '' });
+  const [studentLoading, setStudentLoading] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) router.push('/admin/login');
@@ -63,6 +70,7 @@ export default function AdminPage() {
       fetchSessions();
       fetchResources();
       fetchLeaders();
+      fetchStudents();
     }
   }, [user]);
 
@@ -201,6 +209,7 @@ export default function AdminPage() {
           company: leaderForm.company,
           pin: leaderForm.pin,
           photoURL: leaderForm.photoURL,
+          table: leaderForm.table,
         });
       } else {
         const { setDoc } = await import('firebase/firestore');
@@ -210,9 +219,10 @@ export default function AdminPage() {
           company: leaderForm.company,
           pin: leaderForm.pin,
           photoURL: leaderForm.photoURL,
+          table: leaderForm.table,
         });
       }
-      setLeaderForm({ id: '', name: '', company: '', pin: '', photoURL: '' });
+      setLeaderForm({ id: '', name: '', company: '', pin: '', photoURL: '', table: '' });
       setEditingLeader(null);
       await fetchLeaders();
     } catch (err) {
@@ -229,6 +239,7 @@ export default function AdminPage() {
       company: leader.company || '',
       pin: leader.pin || '',
       photoURL: leader.photoURL || '',
+      table: leader.table || '',
     });
   };
 
@@ -238,7 +249,47 @@ export default function AdminPage() {
     await fetchLeaders();
   };
 
-  // ── PIN EXPORT ────────────────────────────────────────
+  // ── STUDENTS ──────────────────────────────────────────
+
+  const fetchStudents = async () => {
+    const snap = await getDocs(collection(db, 'profiles'));
+    const data = snap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    setStudents(data);
+  };
+
+  const handleEditStudent = (student) => {
+    setEditingStudent(student.id);
+    setStudentTables({
+      table1: student.table1 || '',
+      table2: student.table2 || '',
+      table3: student.table3 || '',
+    });
+  };
+
+  const handleStudentTableSave = async () => {
+    setStudentLoading(true);
+    try {
+      await updateDoc(doc(db, 'profiles', editingStudent), {
+        table1: studentTables.table1,
+        table2: studentTables.table2,
+        table3: studentTables.table3,
+      });
+      setEditingStudent(null);
+      setStudentTables({ table1: '', table2: '', table3: '' });
+      await fetchStudents();
+    } catch (err) {
+      console.error(err);
+    }
+    setStudentLoading(false);
+  };
+
+  const filteredStudents = students.filter(s =>
+    (s.name || '').toLowerCase().includes(studentSearch.toLowerCase())
+  );
+
+  // ── EXPORTS ───────────────────────────────────────────
 
   const handleExportPINs = () => {
     const data = leaders.map((leader, i) => ({
@@ -254,6 +305,28 @@ export default function AdminPage() {
     XLSX.writeFile(wb, `Generation-Prevention-PINs-${new Date().toLocaleDateString('en-GB').replace(/\//g, '-')}.xlsx`);
   };
 
+  const handleExportTables = () => {
+    // Leaders sheet
+    const leaderData = leaders.map(l => ({
+      'Name': l.name || '',
+      'Company': l.company || '',
+      'Table': l.table || '',
+    }));
+    // Students sheet
+    const studentData = students.map(s => ({
+      'Name': s.name || '',
+      'University': s.university || '',
+      'Round 1': s.table1 || '',
+      'Round 2': s.table2 || '',
+      'Round 3': s.table3 || '',
+    }));
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(leaderData), 'Leaders by Table');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(studentData), 'Students Rotation');
+    XLSX.writeFile(wb, `Generation-Prevention-Tables-${new Date().toLocaleDateString('en-GB').replace(/\//g, '-')}.xlsx`);
+  };
+
   const handleSignOut = async () => {
     await signOut(auth);
     router.push('/admin/login');
@@ -267,7 +340,7 @@ export default function AdminPage() {
 
   if (user.email !== ADMIN_EMAIL) return null;
 
-  const tabs = ['schedule', 'resources', 'leaders', 'pins'];
+  const tabs = ['schedule', 'resources', 'leaders', 'students', 'pins'];
 
   return (
     <main className="min-h-screen pb-16 px-4 pt-10" style={{ backgroundColor: '#FEE2DF' }}>
@@ -519,6 +592,12 @@ export default function AdminPage() {
                 style={inputStyle}
               />
               <input
+                placeholder="Table number (e.g. 4)"
+                value={leaderForm.table}
+                onChange={e => setLeaderForm({ ...leaderForm, table: e.target.value })}
+                style={inputStyle}
+              />
+              <input
                 placeholder="Photo URL (optional)"
                 value={leaderForm.photoURL}
                 onChange={e => setLeaderForm({ ...leaderForm, photoURL: e.target.value })}
@@ -535,7 +614,7 @@ export default function AdminPage() {
                 </button>
                 {editingLeader && (
                   <button
-                    onClick={() => { setEditingLeader(null); setLeaderForm({ id: '', name: '', company: '', pin: '', photoURL: '' }); }}
+                    onClick={() => { setEditingLeader(null); setLeaderForm({ id: '', name: '', company: '', pin: '', photoURL: '', table: '' }); }}
                     className="px-4 rounded-xl text-sm font-semibold"
                     style={{ backgroundColor: '#e5e7eb', color: '#36363E' }}
                   >
@@ -559,7 +638,9 @@ export default function AdminPage() {
                     )}
                     <div className="min-w-0">
                       <p className="font-semibold text-sm" style={{ color: '#36363E' }}>{leader.name}</p>
-                      <p className="text-xs opacity-50 truncate" style={{ color: '#36363E' }}>{leader.company} · PIN: {leader.pin}</p>
+                      <p className="text-xs opacity-50 truncate" style={{ color: '#36363E' }}>
+                        {leader.company} · PIN: {leader.pin}{leader.table ? ` · Table ${leader.table}` : ''}
+                      </p>
                     </div>
                   </div>
                   <div className="flex gap-2 shrink-0">
@@ -584,20 +665,127 @@ export default function AdminPage() {
           </div>
         )}
 
+        {/* ── STUDENTS TAB ── */}
+        {activeTab === 'students' && (
+          <div>
+            <h2 style={sectionTitle} className="mb-2">Student Table Assignments</h2>
+            <p className="text-sm mb-4" style={{ color: '#36363E', opacity: 0.6 }}>
+              Search a signed-up student and assign their three speed-dating rotation tables.
+            </p>
+
+            <input
+              placeholder="Search student by name..."
+              value={studentSearch}
+              onChange={e => setStudentSearch(e.target.value)}
+              style={{ ...inputStyle, marginBottom: '16px' }}
+            />
+
+            <div className="space-y-3">
+              {filteredStudents.map(student => (
+                <div key={student.id} className="bg-white rounded-2xl px-5 py-4 shadow-sm">
+                  {editingStudent === student.id ? (
+                    <div>
+                      <p className="font-semibold text-sm mb-3" style={{ color: '#36363E' }}>{student.name}</p>
+                      <div className="flex gap-2 mb-3">
+                        <div className="flex-1">
+                          <label className="text-xs font-semibold block mb-1" style={{ color: '#F4324C' }}>Round 1</label>
+                          <input
+                            placeholder="e.g. 4"
+                            value={studentTables.table1}
+                            onChange={e => setStudentTables({ ...studentTables, table1: e.target.value })}
+                            style={inputStyle}
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <label className="text-xs font-semibold block mb-1" style={{ color: '#F4324C' }}>Round 2</label>
+                          <input
+                            placeholder="e.g. 7"
+                            value={studentTables.table2}
+                            onChange={e => setStudentTables({ ...studentTables, table2: e.target.value })}
+                            style={inputStyle}
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <label className="text-xs font-semibold block mb-1" style={{ color: '#F4324C' }}>Round 3</label>
+                          <input
+                            placeholder="e.g. 2"
+                            value={studentTables.table3}
+                            onChange={e => setStudentTables({ ...studentTables, table3: e.target.value })}
+                            style={inputStyle}
+                          />
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handleStudentTableSave}
+                          disabled={studentLoading}
+                          className="flex-1 rounded-xl py-2.5 text-white text-sm font-semibold"
+                          style={{ backgroundColor: '#F4324C' }}
+                        >
+                          {studentLoading ? 'Saving...' : 'Save tables'}
+                        </button>
+                        <button
+                          onClick={() => { setEditingStudent(null); setStudentTables({ table1: '', table2: '', table3: '' }); }}
+                          className="px-4 rounded-xl text-sm font-semibold"
+                          style={{ backgroundColor: '#e5e7eb', color: '#36363E' }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-sm" style={{ color: '#36363E' }}>{student.name}</p>
+                        <p className="text-xs opacity-50 truncate" style={{ color: '#36363E' }}>
+                          {student.university || 'No university'}
+                          {(student.table1 || student.table2 || student.table3)
+                            ? ` · Tables: ${student.table1 || '–'}, ${student.table2 || '–'}, ${student.table3 || '–'}`
+                            : ' · No tables set'}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => handleEditStudent(student)}
+                        className="text-xs px-3 py-1.5 rounded-lg font-medium shrink-0"
+                        style={{ backgroundColor: '#FEE2DF', color: '#36363E' }}
+                      >
+                        Assign tables
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+              {filteredStudents.length === 0 && (
+                <p className="text-sm text-center py-6" style={{ color: '#36363E', opacity: 0.5 }}>
+                  No students found.
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* ── PIN EXPORT TAB ── */}
         {activeTab === 'pins' && (
           <div>
-            <h2 style={sectionTitle} className="mb-2">PIN Export</h2>
+            <h2 style={sectionTitle} className="mb-2">Exports</h2>
             <p className="text-sm mb-6" style={{ color: '#36363E', opacity: 0.6 }}>
-              Download an Excel spreadsheet of all leader PINs. Updates automatically as you add new leaders.
+              Download spreadsheets for event day. Both update automatically as you make changes.
             </p>
 
             <button
               onClick={handleExportPINs}
-              className="w-full rounded-2xl py-4 text-white font-semibold mb-6 transition-all active:scale-95"
+              className="w-full rounded-2xl py-4 text-white font-semibold mb-3 transition-all active:scale-95"
               style={{ backgroundColor: '#F4324C', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '18px' }}
             >
-              ⬇️ Download as Excel
+              ⬇️ Download Leader PINs
+            </button>
+
+            <button
+              onClick={handleExportTables}
+              className="w-full rounded-2xl py-4 font-semibold mb-6 transition-all active:scale-95"
+              style={{ backgroundColor: '#36363E', color: 'white', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '18px' }}
+            >
+              ⬇️ Download Table Plan (Leaders + Students)
             </button>
 
             <div className="bg-white rounded-3xl shadow-sm overflow-hidden">

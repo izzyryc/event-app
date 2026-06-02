@@ -78,6 +78,11 @@ export default function ProfilePage() {
     </div>
   );
 
+  // Determine if this is a leader profile (has a single table) or student (has 3 rotation tables)
+  const isLeaderProfile = type === 'leader';
+  const hasLeaderTable = isLeaderProfile && profile.table;
+  const hasStudentTables = !isLeaderProfile && (profile.table1 || profile.table2 || profile.table3);
+
   return (
     <div className="min-h-screen pb-24" style={{ backgroundColor: '#FEE2DF' }}>
       <div className="max-w-md mx-auto px-6 pt-10">
@@ -105,6 +110,53 @@ export default function ProfilePage() {
             )}
           </div>
         </div>
+
+        {/* Speed-dating table — leaders (single fixed table) */}
+        {hasLeaderTable && (
+          <div className="rounded-3xl px-6 py-5 mb-4 shadow-sm" style={{ backgroundColor: '#F4324C' }}>
+            <p className="text-xs font-semibold uppercase tracking-widest mb-1 text-white" style={{ opacity: 0.8 }}>
+              Your speed-dating table
+            </p>
+            <p className="text-3xl font-bold text-white" style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900 }}>
+              Table {profile.table}
+            </p>
+            <p className="text-xs text-white mt-1" style={{ opacity: 0.8 }}>
+              Students will rotate to you — please stay at this table throughout.
+            </p>
+          </div>
+        )}
+
+        {/* Speed-dating tables — students (3 rotation rounds) */}
+        {hasStudentTables && (
+          <div className="bg-white rounded-3xl px-6 py-5 mb-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: '#F4324C' }}>
+              Your speed-dating rotation
+            </p>
+            <div className="flex gap-3">
+              <div className="flex-1 text-center rounded-2xl py-3" style={{ backgroundColor: '#FEE2DF' }}>
+                <p className="text-xs font-semibold" style={{ color: '#36363E', opacity: 0.6 }}>Round 1</p>
+                <p className="text-2xl font-bold" style={{ color: '#F4324C', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900 }}>
+                  {profile.table1 || '–'}
+                </p>
+              </div>
+              <div className="flex-1 text-center rounded-2xl py-3" style={{ backgroundColor: '#FEE2DF' }}>
+                <p className="text-xs font-semibold" style={{ color: '#36363E', opacity: 0.6 }}>Round 2</p>
+                <p className="text-2xl font-bold" style={{ color: '#F4324C', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900 }}>
+                  {profile.table2 || '–'}
+                </p>
+              </div>
+              <div className="flex-1 text-center rounded-2xl py-3" style={{ backgroundColor: '#FEE2DF' }}>
+                <p className="text-xs font-semibold" style={{ color: '#36363E', opacity: 0.6 }}>Round 3</p>
+                <p className="text-2xl font-bold" style={{ color: '#F4324C', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900 }}>
+                  {profile.table3 || '–'}
+                </p>
+              </div>
+            </div>
+            <p className="text-xs mt-3" style={{ color: '#36363E', opacity: 0.5 }}>
+              Move to your next table when the bell rings.
+            </p>
+          </div>
+        )}
 
         {/* Bio */}
         {profile.bio && (
