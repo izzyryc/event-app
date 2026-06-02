@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '../../lib/firebase';
 import { useRouter } from 'next/navigation';
 
@@ -21,18 +21,35 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setMessage('');
     try {
       await signInWithEmailAndPassword(auth, email, password);
       router.push('/');
     } catch (err) {
       setError('Incorrect email or password. Please try again.');
       setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    setError('');
+    setMessage('');
+    if (!email) {
+      setError('Please type your email address above first, then tap "Forgot password?"');
+      return;
+    }
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setMessage('Password reset email sent! Check your inbox (and spam folder).');
+    } catch (err) {
+      setError('Could not send reset email. Please check the email address is correct.');
     }
   };
 
@@ -64,6 +81,12 @@ export default function LoginPage() {
           </div>
         )}
 
+        {message && (
+          <div className="rounded-2xl px-4 py-3 mb-6 text-sm font-semibold" style={{ backgroundColor: '#36363E', color: 'white' }}>
+            {message}
+          </div>
+        )}
+
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
           <input
             type="email"
@@ -90,6 +113,15 @@ export default function LoginPage() {
             {loading ? 'Logging in...' : 'Log in'}
           </button>
         </form>
+
+        {/* Forgot password link */}
+        <button
+          onClick={handleForgotPassword}
+          className="w-full text-center text-sm mt-5"
+          style={{ color: '#36363E', opacity: 0.6 }}
+        >
+          Forgot password?
+        </button>
 
       </div>
     </main>
