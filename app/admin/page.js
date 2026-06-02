@@ -7,6 +7,7 @@ import {
   collection, getDocs, addDoc, updateDoc, deleteDoc, doc
 } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
+import * as XLSX from 'xlsx';
 import useAuth from '../../lib/useAuth';
 
 const ADMIN_EMAIL = 'isabelle@ladygardenfoundation.com';
@@ -239,50 +240,18 @@ export default function AdminPage() {
 
   // ── PIN EXPORT ────────────────────────────────────────
 
-  const handlePrintPINs = () => {
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Leader PINs — Generation Prevention Summit</title>
-          <style>
-            body { font-family: Arial, sans-serif; padding: 40px; color: #333; }
-            h1 { font-size: 24px; margin-bottom: 8px; }
-            p { font-size: 14px; color: #666; margin-bottom: 24px; }
-            table { width: 100%; border-collapse: collapse; font-size: 14px; }
-            th { background: #36363E; color: white; padding: 10px 14px; text-align: left; }
-            td { padding: 10px 14px; border-bottom: 1px solid #e5e7eb; }
-            tr:nth-child(even) td { background: #f9f9f9; }
-          </style>
-        </head>
-        <body>
-          <h1>Generation Prevention: Parliamentary Summit</h1>
-          <p>Industry Leader PINs — printed ${new Date().toLocaleDateString('en-GB')}</p>
-          <table>
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Name</th>
-                <th>Company</th>
-                <th>PIN</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${leaders.map((leader, i) => `
-                <tr>
-                  <td>${i + 1}</td>
-                  <td>${leader.name || '—'}</td>
-                  <td>${leader.company || '—'}</td>
-                  <td><strong>${leader.pin || '—'}</strong></td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
-    printWindow.print();
+  const handleExportPINs = () => {
+    const data = leaders.map((leader, i) => ({
+      '#': i + 1,
+      'Name': leader.name || '',
+      'Company': leader.company || '',
+      'PIN': leader.pin || '',
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Leader PINs');
+    XLSX.writeFile(wb, `Generation-Prevention-PINs-${new Date().toLocaleDateString('en-GB').replace(/\//g, '-')}.xlsx`);
   };
 
   const handleSignOut = async () => {
@@ -620,15 +589,15 @@ export default function AdminPage() {
           <div>
             <h2 style={sectionTitle} className="mb-2">PIN Export</h2>
             <p className="text-sm mb-6" style={{ color: '#36363E', opacity: 0.6 }}>
-              Print this table for a hard copy of all leader PINs on event day.
+              Download an Excel spreadsheet of all leader PINs. Updates automatically as you add new leaders.
             </p>
 
             <button
-              onClick={handlePrintPINs}
+              onClick={handleExportPINs}
               className="w-full rounded-2xl py-4 text-white font-semibold mb-6 transition-all active:scale-95"
               style={{ backgroundColor: '#F4324C', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '18px' }}
             >
-              🖨️ Print PIN Sheet
+              ⬇️ Download as Excel
             </button>
 
             <div className="bg-white rounded-3xl shadow-sm overflow-hidden">
