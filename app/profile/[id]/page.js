@@ -12,6 +12,7 @@ export default function ProfilePage() {
   const type = searchParams.get('type');
   const router = useRouter();
   const [profile, setProfile] = useState(null);
+  const [notFound, setNotFound] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const { user: currentUser } = useAuth();
@@ -19,9 +20,19 @@ export default function ProfilePage() {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      const col = type === 'leader' ? 'leaders' : 'profiles';
-      const snap = await getDoc(doc(db, col, id));
-      if (snap.exists()) setProfile(snap.data());
+      try {
+        const col = type === 'leader' ? 'leaders' : 'profiles';
+        const snap = await getDoc(doc(db, col, id));
+        if (snap.exists()) {
+          setProfile(snap.data());
+        } else {
+          console.log('No document found at', col, '/', id);
+          setNotFound(true);
+        }
+      } catch (err) {
+        console.error('Error loading profile:', err);
+        setNotFound(true);
+      }
     };
     fetchProfile();
   }, [id, type]);
@@ -72,6 +83,14 @@ export default function ProfilePage() {
     setSaving(false);
   };
 
+  if (notFound) return (
+    <div className="min-h-screen flex items-center justify-center px-6" style={{ backgroundColor: '#FEE2DF' }}>
+      <p style={{ color: '#36363E', textAlign: 'center' }}>
+        Profile not found. Please go back and try again.
+      </p>
+    </div>
+  );
+
   if (!profile) return (
     <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#FEE2DF' }}>
       <p style={{ color: '#36363E' }}>Loading...</p>
@@ -96,7 +115,7 @@ export default function ProfilePage() {
               className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold text-white"
               style={{ backgroundColor: '#F4324C' }}
             >
-              {profile.name.charAt(0)}
+              {profile.name ? profile.name.charAt(0) : '?'}
             </div>
           )}
           <div>
@@ -217,7 +236,7 @@ export default function ProfilePage() {
           )}
 
           {profile.linkedin && (
-            <a
+            
               href={profile.linkedin}
               target="_blank"
               rel="noopener noreferrer"
@@ -228,7 +247,7 @@ export default function ProfilePage() {
             </a>
           )}
           {profile.email && (
-            <a
+            
               href={`mailto:${profile.email}`}
               className="block text-center rounded-2xl py-3 text-sm font-semibold"
               style={{ backgroundColor: 'white', color: '#36363E' }}
