@@ -236,7 +236,7 @@ export default function ProfilePage() {
           )}
 
           {profile.linkedin && (
-            
+            <a
               href={profile.linkedin}
               target="_blank"
               rel="noopener noreferrer"
@@ -247,7 +247,7 @@ export default function ProfilePage() {
             </a>
           )}
           {profile.email && (
-            
+            <a
               href={`mailto:${profile.email}`}
               className="block text-center rounded-2xl py-3 text-sm font-semibold"
               style={{ backgroundColor: 'white', color: '#36363E' }}
@@ -261,3 +261,4 @@ export default function ProfilePage() {
     </div>
   );
 }
+
